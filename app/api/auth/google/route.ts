@@ -1,12 +1,12 @@
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getGoogleAuthUrl } from "@/lib/google";
+import { getGoogleAuthUrl, getOrigin } from "@/lib/google";
 
 const STATE_COOKIE = "oauth_state";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   // Random CSRF state — bound to a short-lived cookie and echoed back by Google.
   const state = crypto.randomUUID();
 
@@ -19,5 +19,8 @@ export async function GET() {
     maxAge: 60 * 10, // 10 minutes
   });
 
-  return NextResponse.redirect(getGoogleAuthUrl(state));
+  // Derive redirect_uri from the actual request origin so it matches in any
+  // environment (localhost, preview, production).
+  const origin = getOrigin(req);
+  return NextResponse.redirect(getGoogleAuthUrl(origin, state));
 }

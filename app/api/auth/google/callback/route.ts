@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { exchangeCodeForProfile, getAppUrl } from "@/lib/google";
+import { exchangeCodeForProfile, getOrigin } from "@/lib/google";
 import { signSession, setSessionCookie } from "@/lib/auth";
 import { resolveFurthestStep } from "@/lib/progress";
 
@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
 
-  const loginFailed = new URL("/login?error=auth", getAppUrl());
+  const origin = getOrigin(req);
+  const loginFailed = new URL("/login?error=auth", origin);
 
   if (error || !code || !state) {
     return NextResponse.redirect(loginFailed);
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   cookieStore.delete(STATE_COOKIE);
 
   try {
-    const profile = await exchangeCodeForProfile(code);
+    const profile = await exchangeCodeForProfile(code, origin);
 
     // Upsert the user — create on first login, otherwise load existing.
     const user = await prisma.user.upsert({
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     // Returning users resume at the furthest step they reached.
     const step = await resolveFurthestStep(user.id);
-    return NextResponse.redirect(new URL(step, getAppUrl()));
+    return NextResponse.redirect(new URL(step, origin));
   } catch (e) {
     console.error("OAuth callback error:", e);
     return NextResponse.redirect(loginFailed);

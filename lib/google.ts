@@ -1,20 +1,41 @@
 /** Google OAuth helpers (server-side). */
 
-export function getAppUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000";
+/**
+ * Resolve the public origin of the current request.
+ *
+ * Behind Vercel/proxies the request URL host is internal, so we prefer the
+ * `x-forwarded-*` headers (and `host`). Falls back to the request URL, then to
+ * APP_URL. This is what keeps the OAuth redirect_uri matching on any domain.
+ */
+export function getOrigin(req: Request): string {
+  const h = req.headers;
+  const forwardedHost = h.get("x-forwarded-host") ?? h.get("host");
+  const forwardedProto =
+    h.get("x-forwarded-proto") ??
+    (forwardedHost?.startsWith("localhost") ? "http" : "https");
+
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return process.env.APP_URL || "http://localhost:3000";
+  }
 }
 
-export function getRedirectUri(): string {
-  return `${getAppUrl()}/api/auth/google/callback`;
+export function getRedirectUri(origin: string): string {
+  return `${origin}/api/auth/google/callback`;
 }
 
-export function getGoogleAuthUrl(state: string): string {
+export function getGoogleAuthUrl(origin: string, state: string): string {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) throw new Error("GOOGLE_CLIENT_ID is not set");
 
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: getRedirectUri(),
+    redirect_uri: getRedirectUri(origin),
     response_type: "code",
     scope: "openid email profile",
     access_type: "offline",
@@ -33,7 +54,8 @@ export interface GoogleProfile {
 
 /** Exchange an authorization code for the user's Google profile. */
 export async function exchangeCodeForProfile(
-  code: string
+  code: string,
+  origin: string
 ): Promise<GoogleProfile> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -48,7 +70,7 @@ export async function exchangeCodeForProfile(
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: getRedirectUri(),
+      redirect_uri: getRedirectUri(origin),
       grant_type: "authorization_code",
     }),
   });
