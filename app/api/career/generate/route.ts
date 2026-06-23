@@ -15,8 +15,18 @@ import type {
 
 interface GenerateBody {
   resumeId?: string;
-  answers?: Partial<DiscoveryAnswers>;
+  answers?: DiscoveryAnswers;
   excludedRoles?: string[];
+}
+
+function normalizeAnswers(value: unknown): DiscoveryAnswers {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((a) => ({
+      question: String((a as { question?: unknown })?.question ?? "").trim(),
+      answer: String((a as { answer?: unknown })?.answer ?? "").trim(),
+    }))
+    .filter((a) => a.question && a.answer);
 }
 
 function uniqueTitles(titles: string[]): string[] {
@@ -62,11 +72,7 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const incomingAnswers: DiscoveryAnswers = {
-      likes: body.answers?.likes ?? "",
-      dislikes: body.answers?.dislikes ?? "",
-      priority: body.answers?.priority ?? "",
-    };
+    const incomingAnswers: DiscoveryAnswers = normalizeAnswers(body.answers);
 
     let sessionRow = isFirstRound || !latest ? null : latest;
 
@@ -82,7 +88,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const answers = (sessionRow.answers ?? incomingAnswers) as DiscoveryAnswers;
+    // Prefer the answers already stored on the session; fall back to incoming.
+    const storedAnswers = normalizeAnswers(sessionRow.answers);
+    const answers = storedAnswers.length ? storedAnswers : incomingAnswers;
     const shownSoFar = (sessionRow.shownRoles as string[]) ?? [];
     const priorRounds = (sessionRow.recommendations as
       | RecommendationRound[]

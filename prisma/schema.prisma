@@ -37,6 +37,9 @@ model Resume {
 
   tension     String?  @db.Text
 
+  // Dynamic, resume-specific discovery questions (DiscoveryQuestion[]).
+  questions   Json?
+
   createdAt   DateTime @default(now())
 
   user        User @relation(fields: [userId], references: [id])

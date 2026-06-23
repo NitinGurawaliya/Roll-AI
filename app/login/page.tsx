@@ -11,6 +11,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { getSession } from "@/lib/auth";
+import { resolveFurthestStep } from "@/lib/progress";
 
 function GoogleIcon() {
   return (
@@ -29,7 +30,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const session = await getSession();
-  if (session) redirect("/upload");
+  if (session) redirect(await resolveFurthestStep(session.userId));
 
   const { error } = await searchParams;
 

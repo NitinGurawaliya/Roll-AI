@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { exchangeCodeForProfile, getAppUrl } from "@/lib/google";
 import { signSession, setSessionCookie } from "@/lib/auth";
+import { resolveFurthestStep } from "@/lib/progress";
 
 const STATE_COOKIE = "oauth_state";
 
@@ -45,7 +46,9 @@ export async function GET(req: NextRequest) {
     });
     await setSessionCookie(token);
 
-    return NextResponse.redirect(new URL("/upload", getAppUrl()));
+    // Returning users resume at the furthest step they reached.
+    const step = await resolveFurthestStep(user.id);
+    return NextResponse.redirect(new URL(step, getAppUrl()));
   } catch (e) {
     console.error("OAuth callback error:", e);
     return NextResponse.redirect(loginFailed);

@@ -3,10 +3,19 @@ import { AppHeader } from "@/components/AppHeader";
 import { ResumeUploader } from "@/components/ResumeUploader";
 import { Stepper } from "@/components/Stepper";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { resolveFurthestStep } from "@/lib/progress";
 
 export default async function UploadPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // One resume per user — if they already have one, never show upload again.
+  const existing = await prisma.resume.findUnique({
+    where: { userId: session.userId },
+    select: { id: true },
+  });
+  if (existing) redirect(await resolveFurthestStep(session.userId));
 
   return (
     <div className="min-h-screen">

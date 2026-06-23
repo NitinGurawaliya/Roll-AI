@@ -7,7 +7,8 @@ import {
   Loader2,
   AlertCircle,
   ArrowRight,
-  TrendingUp,
+  Check,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,33 @@ interface Props {
   initialRound: number;
   initialCanGenerateMore: boolean;
   initialClosingMessage: string | null;
+}
+
+function SkillChips({
+  items,
+  variant,
+}: {
+  items: string[];
+  variant: "have" | "missing";
+}) {
+  const styles =
+    variant === "have"
+      ? "bg-blue-500/10 text-blue-700 ring-blue-500/20 dark:text-blue-300"
+      : "bg-red-500/10 text-red-700 ring-red-500/20 dark:text-red-300";
+  const Icon = variant === "have" ? Check : Plus;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((s, i) => (
+        <span
+          key={i}
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${styles}`}
+        >
+          <Icon className="size-3" />
+          {s}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function RecommendationsView({
@@ -51,7 +79,7 @@ export function RecommendationsView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resumeId,
-          answers: {},
+          answers: [],
           excludedRoles: paths.map((p) => p.title),
         }),
       });
@@ -83,48 +111,52 @@ export function RecommendationsView({
         <span>Round {round} of 3</span>
       </div>
 
+      {loading && (
+        <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
+          <div>
+            <p className="font-medium">Exploring different skill sets…</p>
+            <p className="text-sm text-muted-foreground">
+              Setting your current roles aside, we&apos;re looking at career
+              directions that draw on a different mix of your strengths — so
+              you see genuinely new options, not variations of the same path.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {paths.map((path, idx) => (
+        {paths.map((path) => (
           <Card
             key={path.title}
-            className="group flex flex-col overflow-hidden transition-shadow hover:shadow-md"
+            className="group flex flex-col transition-shadow hover:shadow-md"
           >
-            <div className="flex items-start gap-3 p-5 pb-0">
+            <div className="flex items-center gap-3 p-5 pb-4">
               <ScoreRing score={path.score} />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Match #{idx + 1}
-                </p>
                 <h3 className="text-lg font-semibold leading-tight">
                   {path.title}
                 </h3>
+                <p className="text-xs text-muted-foreground">match score</p>
               </div>
             </div>
 
-            <CardContent className="flex flex-1 flex-col gap-4 pt-4">
-              {path.reason && (
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {path.reason}
-                </p>
-              )}
-
-              {path.strengths.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {path.strengths.map((s, i) => (
-                    <span
-                      key={i}
-                      className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
-                    >
-                      {s}
-                    </span>
-                  ))}
+            <CardContent className="flex flex-1 flex-col gap-4 pt-0">
+              {(path.matchedSkills?.length ?? 0) > 0 && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300">
+                    You have
+                  </p>
+                  <SkillChips items={path.matchedSkills} variant="have" />
                 </div>
               )}
 
-              {path.growth && (
-                <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-3 text-sm">
-                  <TrendingUp className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <span>{path.growth}</span>
+              {(path.missingSkills?.length ?? 0) > 0 && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold text-red-700 dark:text-red-300">
+                    You&apos;ll need to learn
+                  </p>
+                  <SkillChips items={path.missingSkills} variant="missing" />
                 </div>
               )}
 
@@ -182,17 +214,18 @@ export function RecommendationsView({
               {loading ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Generating more paths…
+                  Exploring different skill sets…
                 </>
               ) : (
                 <>
                   <Sparkles className="size-4" />
-                  Generate 3 more paths
+                  Explore 3 different paths
                 </>
               )}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Not quite right? We&apos;ll explore a different set.
+              Not quite right? We&apos;ll explore roles built on a different mix
+              of your skills.
             </p>
           </div>
         )

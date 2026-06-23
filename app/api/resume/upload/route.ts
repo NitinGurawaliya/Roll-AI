@@ -1,10 +1,12 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { extractTextFromPdf } from "@/lib/pdf";
 import { analyzeResume } from "@/lib/analyze";
+import { generateDiscoveryQuestions } from "@/lib/career";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -40,6 +42,14 @@ export async function POST(req: NextRequest) {
     // Analyze: persona + summary + tension.
     const analysis = await analyzeResume(rawText);
 
+    // Generate dynamic, resume-specific discovery questions up front so the
+    // discovery step and recommendation step share the same set.
+    const questions = await generateDiscoveryQuestions({
+      resumeText: rawText,
+      persona: analysis.persona,
+      summary: analysis.summary,
+    });
+
     // One resume per user — upsert on the unique userId.
     const resume = await prisma.resume.upsert({
       where: { userId: session.userId },
@@ -48,6 +58,7 @@ export async function POST(req: NextRequest) {
         persona: analysis.persona,
         summary: analysis.summary,
         tension: analysis.tension,
+        questions: questions as unknown as Prisma.InputJsonValue,
       },
       create: {
         userId: session.userId,
@@ -55,6 +66,7 @@ export async function POST(req: NextRequest) {
         persona: analysis.persona,
         summary: analysis.summary,
         tension: analysis.tension,
+        questions: questions as unknown as Prisma.InputJsonValue,
       },
     });
 

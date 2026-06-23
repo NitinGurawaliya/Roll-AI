@@ -10,6 +10,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { getSession } from "@/lib/auth";
+import { resolveFurthestStep } from "@/lib/progress";
 
 const STEPS = [
   {
@@ -36,7 +37,7 @@ const STEPS = [
 
 export default async function Home() {
   const session = await getSession();
-  if (session) redirect("/upload");
+  if (session) redirect(await resolveFurthestStep(session.userId));
 
   return (
     <div className="aurora min-h-screen">

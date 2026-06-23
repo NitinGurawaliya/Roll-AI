@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, FileText, Target } from "lucide-react";
+import { ArrowRight, FileText, Target, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Stepper } from "@/components/Stepper";
 import { PersonaBadge } from "@/components/PersonaBadge";
@@ -13,6 +13,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { extractUsablePaths } from "@/lib/progress";
 import { PERSONA_DESCRIPTIONS, type Persona } from "@/lib/types";
 
 export default async function InsightPage() {
@@ -23,6 +24,16 @@ export default async function InsightPage() {
     where: { userId: session.userId },
   });
   if (!resume) redirect("/upload");
+
+  // If they've already generated (current-shape) paths, jump them forward.
+  const existingSession = await prisma.session.findFirst({
+    where: { userId: session.userId },
+    orderBy: { createdAt: "desc" },
+    select: { recommendations: true },
+  });
+  if (extractUsablePaths(existingSession?.recommendations).length > 0) {
+    redirect("/recommendations");
+  }
 
   const persona = resume.persona as Persona;
   const personaDescription = PERSONA_DESCRIPTIONS[persona];
@@ -36,7 +47,7 @@ export default async function InsightPage() {
         <div className="mb-8">
           <PersonaBadge persona={persona} className="mb-4" />
           <h1 className="text-3xl font-bold tracking-tight">
-            Here&apos;s what your resume tells us
+            We read your resume. Here&apos;s the real picture.
           </h1>
           {personaDescription && (
             <p className="mt-2 text-muted-foreground">{personaDescription}</p>
@@ -57,7 +68,7 @@ export default async function InsightPage() {
           </Card>
 
           <Card className="relative overflow-hidden border-primary/30">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
             <CardHeader className="relative">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Target className="size-4 text-primary" />
@@ -70,18 +81,25 @@ export default async function InsightPage() {
           </Card>
         </div>
 
-        <div className="mt-10 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/upload"
-            className={buttonVariants({ variant: "ghost" })}
-          >
-            Re-upload resume
-          </Link>
+        {/* Exciting CTA into the dynamic questions step */}
+        <div className="mt-8 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center sm:p-8">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="size-3.5" />
+            3 quick questions, written from your resume
+          </span>
+          <h2 className="mt-3 text-xl font-bold tracking-tight">
+            Ready to see roles that actually fit you?
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Answer three short, personalized questions and we&apos;ll match you to
+            career paths — showing exactly which of your skills fit and what to
+            learn next.
+          </p>
           <Link
             href="/discovery"
-            className={buttonVariants({ size: "lg" }) + " gap-2"}
+            className={buttonVariants({ size: "lg" }) + " mt-5 gap-2"}
           >
-            Continue to a few quick questions
+            Let&apos;s go
             <ArrowRight className="size-4" />
           </Link>
         </div>
