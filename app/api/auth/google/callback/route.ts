@@ -1,10 +1,10 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { exchangeCodeForProfile, getOrigin } from "@/lib/google";
-import { signSession, setSessionCookie } from "@/lib/auth";
+import { signSession, SESSION_COOKIE } from "@/lib/auth";
+import { SESSION_MAX_AGE } from "@/lib/session";
 import { resolveFurthestStep } from "@/lib/progress";
 
 const STATE_COOKIE = "oauth_state";
@@ -23,12 +23,11 @@ export async function GET(req: NextRequest) {
   }
 
   // Validate CSRF state against the cookie set when we redirected to Google.
-  const cookieStore = await cookies();
-  const savedState = cookieStore.get(STATE_COOKIE)?.value;
+  // Read straight from the request cookies for reliability on Vercel.
+  const savedState = req.cookies.get(STATE_COOKIE)?.value;
   if (!savedState || savedState !== state) {
     return NextResponse.redirect(loginFailed);
   }
-  cookieStore.delete(STATE_COOKIE);
 
   try {
     const profile = await exchangeCodeForProfile(code, origin);
@@ -45,11 +44,24 @@ export async function GET(req: NextRequest) {
       email: user.email,
       name: user.name,
     });
-    await setSessionCookie(token);
 
     // Returning users resume at the furthest step they reached.
     const step = await resolveFurthestStep(user.id);
-    return NextResponse.redirect(new URL(step, origin));
+
+    // Set the session cookie DIRECTLY on the redirect response. Setting it via
+    // next/headers cookies() does not reliably attach Set-Cookie to a
+    // self-constructed redirect on Vercel — which silently drops the session.
+    const response = NextResponse.redirect(new URL(step, origin));
+    response.cookies.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_MAX_AGE,
+    });
+    // Clear the one-time CSRF state cookie on the same response.
+    response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
+    return response;
   } catch (e) {
     console.error("OAuth callback error:", e);
     return NextResponse.redirect(loginFailed);

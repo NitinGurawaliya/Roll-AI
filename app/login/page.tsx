@@ -53,7 +53,9 @@ export default async function LoginPage({
               className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
               <AlertCircle className="size-4 shrink-0" />
-              Sign-in failed. Please try again.
+              {error === "session"
+                ? "Your session expired. Please sign in again."
+                : "Sign-in failed. Please try again."}
             </p>
           )}
           <Link

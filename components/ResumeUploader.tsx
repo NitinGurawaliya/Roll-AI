@@ -44,6 +44,13 @@ export function ResumeUploader() {
         method: "POST",
         body: formData,
       });
+
+      // Session expired between page load and submit — re-authenticate.
+      if (res.status === 401) {
+        router.push("/login?error=session");
+        return;
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
