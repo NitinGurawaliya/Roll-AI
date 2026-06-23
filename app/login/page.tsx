@@ -55,7 +55,7 @@ export default async function LoginPage({
               <AlertCircle className="size-4 shrink-0" />
               {error === "session"
                 ? "Your session expired. Please sign in again."
-                : "Sign-in failed. Please try again."}
+                : `Sign-in failed (${decodeURIComponent(error)}). Please try again.`}
             </p>
           )}
           <Link

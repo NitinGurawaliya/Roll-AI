@@ -16,18 +16,17 @@ export async function GET(req: NextRequest) {
   const error = url.searchParams.get("error");
 
   const origin = getOrigin(req);
-  const loginFailed = new URL("/login?error=auth", origin);
+  const fail = (reason: string) =>
+    NextResponse.redirect(new URL(`/login?error=${reason}`, origin));
 
-  if (error || !code || !state) {
-    return NextResponse.redirect(loginFailed);
-  }
+  if (error) return fail(`google_${error}`);
+  if (!code || !state) return fail("missing_params");
 
   // Validate CSRF state against the cookie set when we redirected to Google.
   // Read straight from the request cookies for reliability on Vercel.
   const savedState = req.cookies.get(STATE_COOKIE)?.value;
-  if (!savedState || savedState !== state) {
-    return NextResponse.redirect(loginFailed);
-  }
+  if (!savedState) return fail("no_state_cookie");
+  if (savedState !== state) return fail("state_mismatch");
 
   try {
     const profile = await exchangeCodeForProfile(code, origin);
@@ -64,6 +63,7 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (e) {
     console.error("OAuth callback error:", e);
-    return NextResponse.redirect(loginFailed);
+    const msg = e instanceof Error ? e.message : "unknown";
+    return fail(`exchange_${encodeURIComponent(msg.slice(0, 80))}`);
   }
 }
