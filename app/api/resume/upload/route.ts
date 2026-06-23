@@ -3,15 +3,19 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest, debugSession, SESSION_COOKIE } from "@/lib/auth";
 import { extractTextFromPdf } from "@/lib/pdf";
 import { analyzeResume } from "@/lib/analyze";
 import { generateDiscoveryQuestions } from "@/lib/career";
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getSessionFromRequest(req);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const reason = await debugSession(req.cookies.get(SESSION_COOKIE)?.value);
+    return NextResponse.json(
+      { error: "Unauthorized", reason },
+      { status: 401 }
+    );
   }
 
   try {

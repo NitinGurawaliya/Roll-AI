@@ -43,15 +43,19 @@ export function ResumeUploader() {
       const res = await fetch("/api/resume/upload", {
         method: "POST",
         body: formData,
+        credentials: "same-origin",
       });
 
-      // Session expired between page load and submit — re-authenticate.
+      const data = await res.json().catch(() => ({}));
+
+      // Temporary diagnostic: surface why auth failed instead of silently
+      // bouncing to login, so we can pinpoint the prod session issue.
       if (res.status === 401) {
-        router.push("/login?error=session");
+        setError(`Unauthorized (reason: ${data.reason ?? "unknown"})`);
+        setStatus("idle");
         return;
       }
 
-      const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
       router.push("/insight");

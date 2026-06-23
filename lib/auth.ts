@@ -37,3 +37,23 @@ export async function getSession(): Promise<SessionPayload | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   return verifySession(token);
 }
+
+/**
+ * Read and verify the session straight from a request's cookies. Use this in
+ * Route Handlers — reading req.cookies is more reliable than next/headers
+ * cookies() across runtimes.
+ */
+export async function getSessionFromRequest(req: {
+  cookies: { get(name: string): { value: string } | undefined };
+}): Promise<SessionPayload | null> {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  return verifySession(token);
+}
+
+/** Diagnostic: why did session verification fail? (debugging aid) */
+export async function debugSession(token: string | undefined): Promise<string> {
+  if (!process.env.AUTH_SECRET) return "no-auth-secret";
+  if (!token) return "no-cookie";
+  const session = await verifySession(token);
+  return session ? "ok" : "invalid-or-expired";
+}
