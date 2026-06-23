@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { Stepper } from "@/components/Stepper";
 import { RecommendationsView } from "@/components/RecommendationsView";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -36,7 +37,8 @@ export default async function RecommendationsPage() {
   return (
     <div className="min-h-screen">
       <AppHeader name={auth.name} />
-      <main className="mx-auto max-w-5xl px-4 py-12">
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <Stepper current="Paths" />
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
             Your personalized career paths

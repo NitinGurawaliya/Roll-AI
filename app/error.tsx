@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Error({
@@ -15,7 +16,10 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+    <main className="aurora flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+        <AlertTriangle className="size-7" />
+      </span>
       <h1 className="text-2xl font-bold">Something went wrong</h1>
       <p className="max-w-md text-muted-foreground">
         We hit an unexpected error. You can try again — if it keeps happening,

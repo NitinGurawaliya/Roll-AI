@@ -1,13 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { ResumeUploader } from "@/components/ResumeUploader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Stepper } from "@/components/Stepper";
 import { getSession } from "@/lib/auth";
 
 export default async function UploadPage() {
@@ -17,7 +11,8 @@ export default async function UploadPage() {
   return (
     <div className="min-h-screen">
       <AppHeader name={session.name} />
-      <main className="mx-auto max-w-2xl px-4 py-12">
+      <main className="mx-auto max-w-2xl px-4 py-10">
+        <Stepper current="Upload" />
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight">
             Upload your resume
@@ -27,17 +22,7 @@ export default async function UploadPage() {
             opportunity that matters most.
           </p>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Resume</CardTitle>
-            <CardDescription>
-              Your resume is analyzed to personalize everything that follows.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResumeUploader />
-          </CardContent>
-        </Card>
+        <ResumeUploader />
       </main>
     </div>
   );

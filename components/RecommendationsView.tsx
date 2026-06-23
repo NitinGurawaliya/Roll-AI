@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+  TrendingUp,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { ScoreRing } from "@/components/ScoreRing";
 import type { CareerPath } from "@/lib/types";
 
 interface Props {
@@ -75,62 +76,76 @@ export function RecommendationsView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {paths.length} path{paths.length === 1 ? "" : "s"} · round {round} of 3
-        </p>
-        <div className="w-32">
-          <Progress value={(Math.min(paths.length, 9) / 9) * 100} />
-        </div>
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {paths.length} path{paths.length === 1 ? "" : "s"} explored
+        </span>
+        <span>Round {round} of 3</span>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {paths.map((path) => (
-          <Card key={path.title} className="flex flex-col">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-lg">{path.title}</CardTitle>
-                <Badge variant="secondary" className="shrink-0">
-                  {path.score}%
-                </Badge>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {paths.map((path, idx) => (
+          <Card
+            key={path.title}
+            className="group flex flex-col overflow-hidden transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-start gap-3 p-5 pb-0">
+              <ScoreRing score={path.score} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Match #{idx + 1}
+                </p>
+                <h3 className="text-lg font-semibold leading-tight">
+                  {path.title}
+                </h3>
               </div>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col gap-4">
+            </div>
+
+            <CardContent className="flex flex-1 flex-col gap-4 pt-4">
               {path.reason && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {path.reason}
                 </p>
               )}
+
               {path.strengths.length > 0 && (
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Key strengths
-                  </p>
-                  <ul className="list-inside list-disc text-sm">
-                    {path.strengths.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
+                <div className="flex flex-wrap gap-1.5">
+                  {path.strengths.map((s, i) => (
+                    <span
+                      key={i}
+                      className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
+                    >
+                      {s}
+                    </span>
+                  ))}
                 </div>
               )}
+
               {path.growth && (
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Growth potential
-                  </p>
-                  <p className="text-sm">{path.growth}</p>
+                <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-3 text-sm">
+                  <TrendingUp className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <span>{path.growth}</span>
                 </div>
               )}
-              <div className="mt-auto pt-2">
+
+              <div className="mt-auto pt-1">
                 <Button
-                  className="w-full"
+                  className="w-full gap-1.5"
                   variant="outline"
                   onClick={() => selectPath(path.title)}
                   disabled={!!selecting}
                 >
-                  {selecting === path.title
-                    ? "Building your plan…"
-                    : "Select this path"}
+                  {selecting === path.title ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Building your plan…
+                    </>
+                  ) : (
+                    <>
+                      Select this path
+                      <ArrowRight className="size-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -139,28 +154,46 @@ export function RecommendationsView({
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="flex items-center gap-2 text-sm text-destructive"
+        >
+          <AlertCircle className="size-4 shrink-0" />
           {error}
         </p>
       )}
 
       {closingMessage ? (
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="whitespace-pre-line py-6 text-center leading-relaxed">
+          <CardContent className="whitespace-pre-line py-6 text-center leading-relaxed text-muted-foreground">
             {closingMessage}
           </CardContent>
         </Card>
       ) : (
         canGenerateMore && (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <Button
               variant="secondary"
               size="lg"
               onClick={generateMore}
               disabled={loading}
+              className="gap-2"
             >
-              {loading ? "Generating more paths…" : "Generate 3 more paths"}
+              {loading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Generating more paths…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" />
+                  Generate 3 more paths
+                </>
+              )}
             </Button>
+            <p className="text-xs text-muted-foreground">
+              Not quite right? We&apos;ll explore a different set.
+            </p>
           </div>
         )
       )}

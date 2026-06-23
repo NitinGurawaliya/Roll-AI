@@ -292,3 +292,16 @@ Success Criteria:
 
 - MVP complete
 - Ready for deployment
+
+
+# Phase 13 - consoldation 
+
+- imporove the ui on recommendation page make sure all the roles that are shown on the cards we show user's exact skillls from reume what are matched and what are actually missig for that role on the card itslef user will just glance at the card and see and try to avoid generic lines just show skills that user have for the roole in blue clolour and red what user needs to learn as simpel as it si and 
+
+- now on the questions page i need the questions to be dynamic from the user's resume only make 3 questions from the user;s resume and 3 options for each questions all has to be dynamic and let user slect the options so we have depper context of user's interests 
+
+- also if a user has uploaded a resume make sure they dont get shown new resume anywhere so only one resume per user at the ui level and at the insihgt level make the ui very good so user is excited  to go ot the question's step 
+
+- also once a user has come to the roles step and the user has completed all the prev steps and user logs out an comes again make sure the user is at the recommendations step only 
+
+- make sure the card ui of the recommendations page is simpel and shows clear thing noting in sentences jsut simpel what skill user have and what not with a match which is good rn

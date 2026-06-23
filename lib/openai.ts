@@ -21,12 +21,14 @@ export const MODEL = "gpt-4o";
  */
 export async function completeJSON<T>(
   system: string,
-  user: string
+  user: string,
+  options: { temperature?: number } = {}
 ): Promise<T> {
   const openai = getOpenAI();
   const completion = await openai.chat.completions.create({
     model: MODEL,
     response_format: { type: "json_object" },
+    temperature: options.temperature ?? 0.7,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },

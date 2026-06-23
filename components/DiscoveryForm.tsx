@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { DISCOVERY_QUESTIONS } from "@/lib/questions";
 
 export function DiscoveryForm({ resumeId }: { resumeId: string }) {
@@ -11,7 +13,8 @@ export function DiscoveryForm({ resumeId }: { resumeId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const allAnswered = DISCOVERY_QUESTIONS.every((q) => answers[q.key]);
+  const answeredCount = DISCOVERY_QUESTIONS.filter((q) => answers[q.key]).length;
+  const allAnswered = answeredCount === DISCOVERY_QUESTIONS.length;
 
   async function handleSubmit() {
     if (!allAnswered) return;
@@ -44,13 +47,23 @@ export function DiscoveryForm({ resumeId }: { resumeId: string }) {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex items-center gap-3">
+        <Progress
+          value={(answeredCount / DISCOVERY_QUESTIONS.length) * 100}
+          className="h-2"
+        />
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {answeredCount}/{DISCOVERY_QUESTIONS.length}
+        </span>
+      </div>
+
       {DISCOVERY_QUESTIONS.map((q, i) => (
         <fieldset key={q.key} className="flex flex-col gap-3">
           <legend className="mb-1 text-lg font-semibold">
             <span className="text-muted-foreground">{i + 1}. </span>
             {q.prompt}
           </legend>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {q.options.map((opt) => {
               const selected = answers[q.key] === opt;
               return (
@@ -61,13 +74,22 @@ export function DiscoveryForm({ resumeId }: { resumeId: string }) {
                   onClick={() =>
                     setAnswers((prev) => ({ ...prev, [q.key]: opt }))
                   }
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                  className={`flex items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm transition-all ${
                     selected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:border-muted-foreground/50 hover:bg-muted"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                      : "border-border hover:border-primary/40 hover:bg-muted/50"
                   }`}
                 >
-                  {opt}
+                  <span className={selected ? "font-medium" : ""}>{opt}</span>
+                  <span
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border"
+                    }`}
+                  >
+                    {selected && <Check className="size-3" />}
+                  </span>
                 </button>
               );
             })}
@@ -76,7 +98,11 @@ export function DiscoveryForm({ resumeId }: { resumeId: string }) {
       ))}
 
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="flex items-center gap-2 text-sm text-destructive"
+        >
+          <AlertCircle className="size-4 shrink-0" />
           {error}
         </p>
       )}
@@ -85,8 +111,19 @@ export function DiscoveryForm({ resumeId }: { resumeId: string }) {
         size="lg"
         onClick={handleSubmit}
         disabled={!allAnswered || submitting}
+        className="gap-2"
       >
-        {submitting ? "Generating your career paths…" : "See my career paths"}
+        {submitting ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            Generating your career paths…
+          </>
+        ) : (
+          <>
+            See my career paths
+            <ArrowRight className="size-4" />
+          </>
+        )}
       </Button>
     </div>
   );

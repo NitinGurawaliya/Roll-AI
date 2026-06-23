@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowRight, FileText, Target } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { Stepper } from "@/components/Stepper";
+import { PersonaBadge } from "@/components/PersonaBadge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PERSONA_LABELS, PERSONA_DESCRIPTIONS, type Persona } from "@/lib/types";
+import { PERSONA_DESCRIPTIONS, type Persona } from "@/lib/types";
 
 export default async function InsightPage() {
   const session = await getSession();
@@ -21,22 +22,19 @@ export default async function InsightPage() {
   const resume = await prisma.resume.findUnique({
     where: { userId: session.userId },
   });
-
-  // No resume yet — send them to upload.
   if (!resume) redirect("/upload");
 
   const persona = resume.persona as Persona;
-  const personaLabel = PERSONA_LABELS[persona] ?? resume.persona;
   const personaDescription = PERSONA_DESCRIPTIONS[persona];
 
   return (
     <div className="min-h-screen">
       <AppHeader name={session.name} />
-      <main className="mx-auto max-w-3xl px-4 py-12">
+      <main className="mx-auto max-w-3xl px-4 py-10">
+        <Stepper current="Insight" />
+
         <div className="mb-8">
-          <Badge variant="secondary" className="mb-3">
-            Your career persona: {personaLabel}
-          </Badge>
+          <PersonaBadge persona={persona} className="mb-4" />
           <h1 className="text-3xl font-bold tracking-tight">
             Here&apos;s what your resume tells us
           </h1>
@@ -45,31 +43,34 @@ export default async function InsightPage() {
           )}
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-5">
           <Card>
             <CardHeader>
-              <CardTitle>Professional summary</CardTitle>
-              <CardDescription>How we read your background.</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileText className="size-4 text-muted-foreground" />
+                Professional summary
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="leading-relaxed">{resume.summary}</p>
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
-            <CardHeader>
-              <CardTitle>The opportunity worth naming</CardTitle>
-              <CardDescription>
-                The one tension we think you should act on.
-              </CardDescription>
+          <Card className="relative overflow-hidden border-primary/30">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent" />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Target className="size-4 text-primary" />
+                The opportunity worth naming
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <p className="text-lg leading-relaxed">{resume.tension}</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="mt-10 flex items-center justify-between gap-3">
+        <div className="mt-10 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/upload"
             className={buttonVariants({ variant: "ghost" })}
@@ -78,9 +79,10 @@ export default async function InsightPage() {
           </Link>
           <Link
             href="/discovery"
-            className={buttonVariants({ size: "lg" })}
+            className={buttonVariants({ size: "lg" }) + " gap-2"}
           >
             Continue to a few quick questions
+            <ArrowRight className="size-4" />
           </Link>
         </div>
       </main>
