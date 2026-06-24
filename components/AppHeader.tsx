@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,7 +13,10 @@ export function AppHeader({ name }: { name?: string }) {
               {name}
             </span>
           )}
-          <Link
+          {/* Plain <a>, NOT next/link: this is an API route that 307s to /login
+              after clearing the session cookie. next/link would intercept it as
+              an RSC fetch and the redirect wouldn't drive a real navigation. */}
+          <a
             href="/api/auth/logout"
             aria-label="Sign out"
             className={
@@ -23,7 +25,7 @@ export function AppHeader({ name }: { name?: string }) {
           >
             <LogOut className="size-4" />
             <span className="hidden sm:inline">Sign out</span>
-          </Link>
+          </a>
         </div>
       </div>
     </header>

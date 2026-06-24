@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import {
@@ -58,13 +57,18 @@ export default async function LoginPage({
                 : `Sign-in failed (${decodeURIComponent(error)}). Please try again.`}
             </p>
           )}
-          <Link
+          {/* Plain <a>, NOT next/link: this hits an API route that 307s to
+              Google (a different origin). next/link would treat it as an RSC
+              client navigation (?_rsc=...) and try to follow the redirect via
+              fetch(), which the browser blocks with a CORS error so OAuth never
+              starts. A full-page navigation follows the redirect normally. */}
+          <a
             href="/api/auth/google"
             className={buttonVariants({ size: "lg" }) + " w-full gap-2"}
           >
             <GoogleIcon />
             Continue with Google
-          </Link>
+          </a>
           <p className="text-center text-xs text-muted-foreground">
             We only store your name and email.
           </p>
