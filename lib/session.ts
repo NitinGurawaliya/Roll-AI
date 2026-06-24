@@ -27,6 +27,33 @@ export async function signSession(payload: SessionPayload): Promise<string> {
     .sign(getSecretKey());
 }
 
+/**
+ * Signed OAuth state (CSRF). Instead of storing a random value in a cookie
+ * that must survive a cross-serverless redirect on Vercel, we sign a short-lived
+ * token and verify its signature on callback — no cookie needed.
+ */
+export async function signOAuthState(): Promise<string> {
+  return new SignJWT({ purpose: "oauth_state" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("10m")
+    .sign(getSecretKey());
+}
+
+export async function verifyOAuthState(
+  token: string | undefined
+): Promise<boolean> {
+  if (!token) return false;
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey(), {
+      algorithms: ["HS256"],
+    });
+    return payload.purpose === "oauth_state";
+  } catch {
+    return false;
+  }
+}
+
 /** Verify a JWT and return its payload, or null if invalid. */
 export async function verifySession(
   token: string | undefined

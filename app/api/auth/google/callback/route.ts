@@ -4,10 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exchangeCodeForProfile, getOrigin } from "@/lib/google";
 import { signSession, SESSION_COOKIE } from "@/lib/auth";
-import { SESSION_MAX_AGE } from "@/lib/session";
+import { SESSION_MAX_AGE, verifyOAuthState } from "@/lib/session";
 import { resolveFurthestStep } from "@/lib/progress";
-
-const STATE_COOKIE = "oauth_state";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -22,11 +20,10 @@ export async function GET(req: NextRequest) {
   if (error) return fail(`google_${error}`);
   if (!code || !state) return fail("missing_params");
 
-  // Validate CSRF state against the cookie set when we redirected to Google.
-  // Read straight from the request cookies for reliability on Vercel.
-  const savedState = req.cookies.get(STATE_COOKIE)?.value;
-  if (!savedState) return fail("no_state_cookie");
-  if (savedState !== state) return fail("state_mismatch");
+  // Validate CSRF state by verifying the signed token Google echoed back in the
+  // `state` param. No cookie is involved, so this survives the cross-site
+  // redirect on Vercel where a state cookie did not.
+  if (!(await verifyOAuthState(state))) return fail("invalid_state");
 
   try {
     const profile = await exchangeCodeForProfile(code, origin);
@@ -58,8 +55,6 @@ export async function GET(req: NextRequest) {
       path: "/",
       maxAge: SESSION_MAX_AGE,
     });
-    // Clear the one-time CSRF state cookie on the same response.
-    response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
     return response;
   } catch (e) {
     console.error("OAuth callback error:", e);
